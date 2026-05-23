@@ -2,30 +2,6 @@
 
 A beginner-friendly MERN stack to-do app built with React, Axios, Node.js, Express, MongoDB Atlas, and Mongoose.
 
-## Folder Structure
-
-```text
-mern-todo-app/
-|-- backend/
-|   |-- models/
-|   |   `-- Task.js
-|   |-- routes/
-|   |   `-- taskRoutes.js
-|   |-- .env
-|   |-- .env.example
-|   |-- package.json
-|   `-- server.js
-|-- frontend/
-|   |-- public/
-|   |   `-- index.html
-|   |-- src/
-|   |   |-- components/
-|   |   |-- App.css
-|   |   |-- App.js
-|   |   `-- index.js
-`-- README.md
-```
-
 ## Features
 
 - Add new tasks from a React form
