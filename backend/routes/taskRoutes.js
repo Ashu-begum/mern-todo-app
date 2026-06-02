@@ -29,6 +29,52 @@ router.get("/tasks", async (req, res) => {
   }
 });
 
+router.put("/update/:id", async (req, res) => {
+  try {
+    const updateData = {};
+
+    if (typeof req.body.text === "string") {
+      if (!req.body.text.trim()) {
+        return res.status(400).json({ message: "Task text is required" });
+      }
+
+      updateData.text = req.body.text.trim();
+    }
+
+    if (typeof req.body.completed === "boolean") {
+      updateData.completed = req.body.completed;
+    }
+
+    const updatedTask = await Task.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedTask) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    res.json(updatedTask);
+  } catch (error) {
+    res.status(500).json({ message: "Unable to update task", error: error.message });
+  }
+});
+
+router.delete("/delete/:id", async (req, res) => {
+  try {
+    const deletedTask = await Task.findByIdAndDelete(req.params.id);
+
+    if (!deletedTask) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    res.json({ message: "Task deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Unable to delete task", error: error.message });
+  }
+});
+
 router.patch("/tasks/:id", async (req, res) => {
   try {
     const updatedTask = await Task.findByIdAndUpdate(

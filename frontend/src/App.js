@@ -8,6 +8,8 @@ function App() {
   const [tasks, setTasks] = useState([]);
   const [text, setText] = useState("");
   const [filter, setFilter] = useState("all");
+  const [editingId, setEditingId] = useState(null);
+  const [editingText, setEditingText] = useState("");
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState("");
@@ -72,7 +74,7 @@ function App() {
     try {
       setError("");
 
-      const res = await axios.patch(`${API_URL}/tasks/${task._id}`, {
+      const res = await axios.put(`${API_URL}/update/${task._id}`, {
         completed: !task.completed,
       });
 
@@ -89,7 +91,7 @@ function App() {
   const deleteTask = async (id) => {
     try {
       setError("");
-      await axios.delete(`${API_URL}/tasks/${id}`);
+      await axios.delete(`${API_URL}/delete/${id}`);
       setTasks(tasks.filter((task) => task._id !== id));
       setApiOnline(true);
     } catch (err) {
@@ -105,7 +107,7 @@ function App() {
       setError("");
       await Promise.all(
         completedTasks.map((task) =>
-          axios.delete(`${API_URL}/tasks/${task._id}`)
+          axios.delete(`${API_URL}/delete/${task._id}`)
         )
       );
       setTasks(tasks.filter((task) => !task.completed));
@@ -113,6 +115,41 @@ function App() {
     } catch (err) {
       setApiOnline(false);
       setError("Could not clear completed tasks. Please try again.");
+    }
+  };
+
+  const startEditing = (task) => {
+    setEditingId(task._id);
+    setEditingText(task.text);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditingText("");
+  };
+
+  const updateTaskText = async (task) => {
+    if (!editingText.trim()) {
+      alert("Task cannot be empty!");
+      return;
+    }
+
+    try {
+      setError("");
+
+      const res = await axios.put(`${API_URL}/update/${task._id}`, {
+        text: editingText,
+        completed: task.completed,
+      });
+
+      setTasks(
+        tasks.map((item) => (item._id === task._id ? res.data : item))
+      );
+      cancelEditing();
+      setApiOnline(true);
+    } catch (err) {
+      setApiOnline(false);
+      setError("Could not edit task. Please try again.");
     }
   };
 
@@ -205,25 +242,56 @@ function App() {
                 key={task._id}
                 className={task.completed ? "task completed" : "task"}
               >
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={task.completed}
-                    onChange={() => toggleTask(task)}
-                  />
-                  <span className="task-text">{task.text}</span>
-                </label>
+                {editingId === task._id ? (
+                  <div className="edit-row">
+                    <input
+                      value={editingText}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          updateTaskText(task);
+                        }
 
-                <span className="task-badge">
-                  {task.completed ? "Done" : "Open"}
-                </span>
+                        if (e.key === "Escape") {
+                          cancelEditing();
+                        }
+                      }}
+                    />
+                    <button onClick={() => updateTaskText(task)}>Save</button>
+                    <button className="secondary-button" onClick={cancelEditing}>
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={task.completed}
+                        onChange={() => toggleTask(task)}
+                      />
+                      <span className="task-text">{task.text}</span>
+                    </label>
 
-                <button
-                  className="delete-button"
-                  onClick={() => deleteTask(task._id)}
-                >
-                  Delete
-                </button>
+                    <span className="task-badge">
+                      {task.completed ? "Done" : "Open"}
+                    </span>
+
+                    <button
+                      className="edit-button"
+                      onClick={() => startEditing(task)}
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      className="delete-button"
+                      onClick={() => deleteTask(task._id)}
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
               </li>
             ))}
           </ul>

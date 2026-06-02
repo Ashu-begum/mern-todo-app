@@ -232,6 +232,24 @@ button:disabled {
   accent-color: #2f6f68;
 }
 
+.edit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.edit-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  color: #242424;
+  background: #fffdf8;
+  border: 1px solid #cfc6b5;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
 .task-text {
   flex: 1;
   overflow-wrap: anywhere;
@@ -256,11 +274,31 @@ button:disabled {
   background: #e8f5eb;
 }
 
+.edit-button,
 .delete-button {
   min-width: auto;
   padding: 8px 10px;
-  background: #8f3f3f;
   font-size: 13px;
+}
+
+.edit-button {
+  background: #5d6470;
+}
+
+.edit-button:hover {
+  background: #4b525d;
+}
+
+.secondary-button {
+  background: #6f6a61;
+}
+
+.secondary-button:hover {
+  background: #5d584f;
+}
+
+.delete-button {
+  background: #8f3f3f;
 }
 
 .delete-button:hover {
@@ -312,6 +350,7 @@ button:disabled {
   }
 
   .add-row input,
+  .edit-row input,
   .message {
     background: #1c1d1b;
     border-color: #555448;
@@ -338,6 +377,7 @@ button:disabled {
   .header,
   .add-row,
   .toolbar,
+  .edit-row,
   .task {
     flex-direction: column;
     align-items: stretch;

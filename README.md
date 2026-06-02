@@ -5,6 +5,7 @@ A beginner-friendly MERN stack to-do app built with React, Axios, Node.js, Expre
 ## Features
 
 - Add new tasks from a React form
+- Edit existing task text
 - Mark tasks as completed or pending
 - Delete tasks
 - Fetch and display all tasks from the Express API
@@ -51,12 +52,12 @@ GET http://localhost:5000/tasks
 ```
 
 ```text
-PATCH http://localhost:5000/tasks/:id
-Body: { "completed": true }
+PUT http://localhost:5000/update/:id
+Body: { "text": "Updated task", "completed": true }
 ```
 
 ```text
-DELETE http://localhost:5000/tasks/:id
+DELETE http://localhost:5000/delete/:id
 ```
 
 ## Frontend Setup
