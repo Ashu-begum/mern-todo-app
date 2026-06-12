@@ -1,68 +1,63 @@
-# MERN To-Do List Application
+# MERN To-Do List App With JWT Authentication
 
-A beginner-friendly MERN stack to-do app built with React, Axios, Node.js, Express, MongoDB Atlas, and Mongoose.
+A beginner-friendly MERN stack app using React, Axios, Node.js, Express, MongoDB Atlas, Mongoose, bcryptjs, and JSON Web Tokens.
 
 ## Features
 
-- Add new tasks from a React form
-- Edit existing task text
-- Mark tasks as completed or pending
-- Delete tasks
-- Fetch and display all tasks from the Express API
-- Save tasks in a MongoDB Atlas collection
-- Empty input alert
-- Loading and error states
-- Responsive light/dark modern card UI
-- Axios API communication
-- Beginner-friendly comments and clean async/await code
+- Register a new user account
+- Hash passwords with bcryptjs
+- Login and receive a JWT token
+- Store token in localStorage
+- Access a protected `/profile` dashboard route
+- Logout and clear token
+- Add, view, edit, complete, and delete tasks
+- Responsive modern UI
+
+## Folder Structure
+
+```text
+mern-todo-app/
+|-- backend/
+|   |-- middleware/
+|   |   `-- authMiddleware.js
+|   |-- models/
+|   |   |-- Task.js
+|   |   `-- User.js
+|   |-- routes/
+|   |   |-- authRoutes.js
+|   |   `-- taskRoutes.js
+|   |-- .env
+|   |-- .env.example
+|   |-- package.json
+|   `-- server.js
+|-- frontend/
+|   |-- public/
+|   |   `-- index.html
+|   |-- src/
+|   |   |-- components/
+|   |   |-- App.css
+|   |   |-- App.js
+|   |   `-- index.js
+`-- README.md
+```
 
 ## Backend Setup
-
-1. Open a terminal in the backend folder:
 
 ```bash
 cd backend
 npm install
+npm start
 ```
 
-2. Create `backend/.env` using `backend/.env.example` as a guide:
+Create `backend/.env`:
 
 ```env
 MONGO_URI=mongodb+srv://<username>:<password>@<cluster-url>/mern-todo-app?retryWrites=true&w=majority
 PORT=5000
-```
-
-3. Start the Express server:
-
-```bash
-npm start
-```
-
-The backend runs at `http://localhost:5000`.
-
-## Backend API
-
-```text
-POST http://localhost:5000/add
-Body: { "text": "Learn MERN" }
-```
-
-```text
-GET http://localhost:5000/tasks
-```
-
-```text
-PUT http://localhost:5000/update/:id
-Body: { "text": "Updated task", "completed": true }
-```
-
-```text
-DELETE http://localhost:5000/delete/:id
+JWT_SECRET=replace_this_with_a_long_random_secret_key
 ```
 
 ## Frontend Setup
-
-Open a second terminal in the frontend folder:
 
 ```bash
 cd frontend
@@ -70,22 +65,46 @@ npm install
 npm start
 ```
 
-The React app runs at `http://localhost:3000`.
+Frontend runs at `http://localhost:3000`.
+Backend runs at `http://localhost:5000`.
+
+## Authentication API
+
+```text
+POST /register
+Body: { "name": "Ashu", "email": "ashu@example.com", "password": "password123" }
+```
+
+```text
+POST /login
+Body: { "email": "ashu@example.com", "password": "password123" }
+```
+
+```text
+GET /profile
+Header: Authorization: Bearer <token>
+```
+
+## Task API
+
+```text
+POST /add
+Body: { "text": "Learn MERN" }
+```
+
+```text
+GET /tasks
+```
+
+```text
+PUT /update/:id
+Body: { "text": "Updated task", "completed": true }
+```
+
+```text
+DELETE /delete/:id
+```
 
 ## MongoDB Atlas Notes
 
-Create a MongoDB Atlas cluster, add a database user, allow your IP address in Network Access, and place the connection string in `backend/.env` as `MONGO_URI`.
-
-## Run The Project
-
-Start both apps in separate terminals:
-
-```bash
-cd backend
-npm start
-```
-
-```bash
-cd frontend
-npm start
-```
+If the backend cannot connect to MongoDB Atlas, open Atlas and go to **Security -> Network Access**, then add your current IP address.

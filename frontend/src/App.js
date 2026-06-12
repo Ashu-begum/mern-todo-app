@@ -5,42 +5,75 @@ import "./App.css";
 const API_URL = "http://localhost:5000";
 
 function App() {
+  const [authMode, setAuthMode] = useState("login");
+  const [authForm, setAuthForm] = useState({ name: "", email: "", password: "" });
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
+  const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [text, setText] = useState("");
-  const [filter, setFilter] = useState("all");
   const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [adding, setAdding] = useState(false);
-  const [error, setError] = useState("");
-  const [apiOnline, setApiOnline] = useState(false);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const completedCount = tasks.filter((task) => task.completed).length;
   const pendingCount = tasks.length - completedCount;
-  const visibleTasks = tasks.filter((task) => {
-    if (filter === "active") return !task.completed;
-    if (filter === "completed") return task.completed;
-    return true;
-  });
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    if (token) {
+      loadProfile(token);
+      fetchTasks();
+    }
+  }, [token]);
+
+  const handleAuthChange = (e) => {
+    setAuthForm({ ...authForm, [e.target.name]: e.target.value });
+  };
+
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault();
+    setMessage("");
+
+    const endpoint = authMode === "register" ? "/register" : "/login";
+    const payload =
+      authMode === "register"
+        ? authForm
+        : { email: authForm.email, password: authForm.password };
+
+    try {
+      setLoading(true);
+      const res = await axios.post(`${API_URL}${endpoint}`, payload);
+
+      localStorage.setItem("token", res.data.token);
+      setToken(res.data.token);
+      setUser(res.data.user);
+      setAuthForm({ name: "", email: "", password: "" });
+    } catch (err) {
+      setMessage(err.response?.data?.message || "Authentication failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadProfile = async (savedToken) => {
+    try {
+      const res = await axios.get(`${API_URL}/profile`, {
+        headers: {
+          Authorization: `Bearer ${savedToken}`,
+        },
+      });
+      setUser(res.data.user);
+    } catch (err) {
+      logout();
+    }
+  };
 
   const fetchTasks = async () => {
     try {
-      setLoading(true);
-      setError("");
-
-      // Axios asks the Express backend for every task stored in MongoDB.
       const res = await axios.get(`${API_URL}/tasks`);
       setTasks(res.data);
-      setApiOnline(true);
     } catch (err) {
-      setApiOnline(false);
-      setError("Could not load tasks. Make sure the backend server is running.");
-    } finally {
-      setLoading(false);
+      setMessage("Could not load tasks. Make sure backend and MongoDB are running.");
     }
   };
 
@@ -51,70 +84,24 @@ function App() {
     }
 
     try {
-      setAdding(true);
-      setError("");
-
-      // Send the new task to Express, then add the saved MongoDB task to the UI.
-      const res = await axios.post(`${API_URL}/add`, {
-        text,
-      });
-
+      const res = await axios.post(`${API_URL}/add`, { text });
       setTasks([res.data, ...tasks]);
       setText("");
-      setApiOnline(true);
     } catch (err) {
-      setApiOnline(false);
-      setError("Could not add task. Please try again.");
-    } finally {
-      setAdding(false);
+      setMessage("Could not add task.");
     }
   };
 
   const toggleTask = async (task) => {
     try {
-      setError("");
-
       const res = await axios.put(`${API_URL}/update/${task._id}`, {
+        text: task.text,
         completed: !task.completed,
       });
 
-      setTasks(
-        tasks.map((item) => (item._id === task._id ? res.data : item))
-      );
-      setApiOnline(true);
+      setTasks(tasks.map((item) => (item._id === task._id ? res.data : item)));
     } catch (err) {
-      setApiOnline(false);
-      setError("Could not update task. Please try again.");
-    }
-  };
-
-  const deleteTask = async (id) => {
-    try {
-      setError("");
-      await axios.delete(`${API_URL}/delete/${id}`);
-      setTasks(tasks.filter((task) => task._id !== id));
-      setApiOnline(true);
-    } catch (err) {
-      setApiOnline(false);
-      setError("Could not delete task. Please try again.");
-    }
-  };
-
-  const clearCompleted = async () => {
-    const completedTasks = tasks.filter((task) => task.completed);
-
-    try {
-      setError("");
-      await Promise.all(
-        completedTasks.map((task) =>
-          axios.delete(`${API_URL}/delete/${task._id}`)
-        )
-      );
-      setTasks(tasks.filter((task) => !task.completed));
-      setApiOnline(true);
-    } catch (err) {
-      setApiOnline(false);
-      setError("Could not clear completed tasks. Please try again.");
+      setMessage("Could not update task.");
     }
   };
 
@@ -128,136 +115,160 @@ function App() {
     setEditingText("");
   };
 
-  const updateTaskText = async (task) => {
+  const saveTask = async (task) => {
     if (!editingText.trim()) {
       alert("Task cannot be empty!");
       return;
     }
 
     try {
-      setError("");
-
       const res = await axios.put(`${API_URL}/update/${task._id}`, {
         text: editingText,
         completed: task.completed,
       });
 
-      setTasks(
-        tasks.map((item) => (item._id === task._id ? res.data : item))
-      );
+      setTasks(tasks.map((item) => (item._id === task._id ? res.data : item)));
       cancelEditing();
-      setApiOnline(true);
     } catch (err) {
-      setApiOnline(false);
-      setError("Could not edit task. Please try again.");
+      setMessage("Could not edit task.");
     }
   };
+
+  const deleteTask = async (id) => {
+    try {
+      await axios.delete(`${API_URL}/delete/${id}`);
+      setTasks(tasks.filter((task) => task._id !== id));
+    } catch (err) {
+      setMessage("Could not delete task.");
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    setToken("");
+    setUser(null);
+    setTasks([]);
+    setMessage("");
+  };
+
+  if (!token) {
+    return (
+      <main className="page">
+        <section className="auth-card">
+          <p className="date-label">MERN Authentication</p>
+          <h1>{authMode === "register" ? "Create account" : "Welcome back"}</h1>
+          <p className="helper-text">
+            {authMode === "register"
+              ? "Register to get a JWT token and access the dashboard."
+              : "Login to access your protected dashboard."}
+          </p>
+
+          <form className="auth-form" onSubmit={handleAuthSubmit}>
+            {authMode === "register" && (
+              <input
+                name="name"
+                value={authForm.name}
+                onChange={handleAuthChange}
+                placeholder="Name"
+              />
+            )}
+            <input
+              name="email"
+              type="email"
+              value={authForm.email}
+              onChange={handleAuthChange}
+              placeholder="Email"
+            />
+            <input
+              name="password"
+              type="password"
+              value={authForm.password}
+              onChange={handleAuthChange}
+              placeholder="Password"
+            />
+            <button type="submit" disabled={loading}>
+              {loading ? "Please wait" : authMode === "register" ? "Register" : "Login"}
+            </button>
+          </form>
+
+          {message && <p className="message error">{message}</p>}
+
+          <button
+            className="link-button"
+            onClick={() => {
+              setMessage("");
+              setAuthMode(authMode === "register" ? "login" : "register");
+            }}
+          >
+            {authMode === "register"
+              ? "Already have an account? Login"
+              : "New user? Create an account"}
+          </button>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="page">
       <section className="todo-app">
         <div className="header">
           <div>
-            <p className="date-label">Today's list</p>
-            <h1>To-Do List</h1>
+            <p className="date-label">Protected Dashboard</p>
+            <h1>Hello, {user?.name || "User"}</h1>
+            <p className="helper-text">{user?.email}</p>
           </div>
-          <div className="counter">
-            <strong>{pendingCount}</strong>
-            <span>left</span>
-          </div>
+          <button className="logout-button" onClick={logout}>
+            Logout
+          </button>
         </div>
 
-        <div className={apiOnline ? "status online" : "status offline"}>
-          <span></span>
-          {apiOnline ? "Backend connected" : "Backend not connected"}
+        <div className="dashboard-grid">
+          <div>
+            <strong>{tasks.length}</strong>
+            <span>Total</span>
+          </div>
+          <div>
+            <strong>{pendingCount}</strong>
+            <span>Pending</span>
+          </div>
+          <div>
+            <strong>{completedCount}</strong>
+            <span>Done</span>
+          </div>
         </div>
 
         <div className="add-row">
           <input
-            type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                addTask();
-              }
+              if (e.key === "Enter") addTask();
             }}
             placeholder="Enter a new task"
           />
-
-          <button onClick={addTask} disabled={adding}>
-            {adding ? "Adding" : "Add Task"}
-          </button>
+          <button onClick={addTask}>Add Task</button>
         </div>
 
-        {error && <p className="message error">{error}</p>}
+        {message && <p className="message error">{message}</p>}
 
-        <div className="toolbar">
-          <div className="filters">
-            <button
-              className={filter === "all" ? "filter active" : "filter"}
-              onClick={() => setFilter("all")}
-            >
-              All
-            </button>
-            <button
-              className={filter === "active" ? "filter active" : "filter"}
-              onClick={() => setFilter("active")}
-            >
-              Active
-            </button>
-            <button
-              className={filter === "completed" ? "filter active" : "filter"}
-              onClick={() => setFilter("completed")}
-            >
-              Completed
-            </button>
-          </div>
-
-          <button
-            className="clear-button"
-            onClick={clearCompleted}
-            disabled={completedCount === 0}
-          >
-            Clear completed
-          </button>
-        </div>
-
-        <div className="summary">
-          <span>{tasks.length} total</span>
-          <span>{pendingCount} active</span>
-          <span>{completedCount} completed</span>
-        </div>
-
-        {loading ? (
-          <p className="message">Loading tasks...</p>
-        ) : tasks.length === 0 ? (
+        {tasks.length === 0 ? (
           <p className="message">No tasks yet. Add your first one above.</p>
-        ) : visibleTasks.length === 0 ? (
-          <p className="message">No tasks in this view.</p>
         ) : (
           <ul className="task-list">
-            {visibleTasks.map((task) => (
-              <li
-                key={task._id}
-                className={task.completed ? "task completed" : "task"}
-              >
+            {tasks.map((task) => (
+              <li key={task._id} className={task.completed ? "task completed" : "task"}>
                 {editingId === task._id ? (
                   <div className="edit-row">
                     <input
                       value={editingText}
                       onChange={(e) => setEditingText(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          updateTaskText(task);
-                        }
-
-                        if (e.key === "Escape") {
-                          cancelEditing();
-                        }
+                        if (e.key === "Enter") saveTask(task);
+                        if (e.key === "Escape") cancelEditing();
                       }}
                     />
-                    <button onClick={() => updateTaskText(task)}>Save</button>
+                    <button onClick={() => saveTask(task)}>Save</button>
                     <button className="secondary-button" onClick={cancelEditing}>
                       Cancel
                     </button>
@@ -272,22 +283,10 @@ function App() {
                       />
                       <span className="task-text">{task.text}</span>
                     </label>
-
-                    <span className="task-badge">
-                      {task.completed ? "Done" : "Open"}
-                    </span>
-
-                    <button
-                      className="edit-button"
-                      onClick={() => startEditing(task)}
-                    >
+                    <button className="edit-button" onClick={() => startEditing(task)}>
                       Edit
                     </button>
-
-                    <button
-                      className="delete-button"
-                      onClick={() => deleteTask(task._id)}
-                    >
+                    <button className="delete-button" onClick={() => deleteTask(task._id)}>
                       Delete
                     </button>
                   </>

@@ -13,7 +13,9 @@ const mongoUri = process.env.MONGO_URI;
 app.use(cors());
 app.use(express.json());
 
+const authRoutes = require("./routes/authRoutes");
 const taskRoutes = require("./routes/taskRoutes");
+app.use("/", authRoutes);
 app.use("/", taskRoutes);
 
 app.get("/health", (req, res) => {
