@@ -19,6 +19,12 @@ function App() {
   const completedCount = tasks.filter((task) => task.completed).length;
   const pendingCount = tasks.length - completedCount;
 
+  const getAuthConfig = (savedToken = token) => ({
+    headers: {
+      Authorization: `Bearer ${savedToken}`,
+    },
+  });
+
   useEffect(() => {
     if (token) {
       loadProfile(token);
@@ -57,11 +63,7 @@ function App() {
 
   const loadProfile = async (savedToken) => {
     try {
-      const res = await axios.get(`${API_URL}/profile`, {
-        headers: {
-          Authorization: `Bearer ${savedToken}`,
-        },
-      });
+      const res = await axios.get(`${API_URL}/profile`, getAuthConfig(savedToken));
       setUser(res.data.user);
     } catch (err) {
       logout();
@@ -70,7 +72,7 @@ function App() {
 
   const fetchTasks = async () => {
     try {
-      const res = await axios.get(`${API_URL}/tasks`);
+      const res = await axios.get(`${API_URL}/tasks`, getAuthConfig());
       setTasks(res.data);
     } catch (err) {
       setMessage("Could not load tasks. Make sure backend and MongoDB are running.");
@@ -84,7 +86,7 @@ function App() {
     }
 
     try {
-      const res = await axios.post(`${API_URL}/add`, { text });
+      const res = await axios.post(`${API_URL}/add`, { text }, getAuthConfig());
       setTasks([res.data, ...tasks]);
       setText("");
     } catch (err) {
@@ -94,10 +96,14 @@ function App() {
 
   const toggleTask = async (task) => {
     try {
-      const res = await axios.put(`${API_URL}/update/${task._id}`, {
-        text: task.text,
-        completed: !task.completed,
-      });
+      const res = await axios.put(
+        `${API_URL}/update/${task._id}`,
+        {
+          text: task.text,
+          completed: !task.completed,
+        },
+        getAuthConfig()
+      );
 
       setTasks(tasks.map((item) => (item._id === task._id ? res.data : item)));
     } catch (err) {
@@ -122,10 +128,14 @@ function App() {
     }
 
     try {
-      const res = await axios.put(`${API_URL}/update/${task._id}`, {
-        text: editingText,
-        completed: task.completed,
-      });
+      const res = await axios.put(
+        `${API_URL}/update/${task._id}`,
+        {
+          text: editingText,
+          completed: task.completed,
+        },
+        getAuthConfig()
+      );
 
       setTasks(tasks.map((item) => (item._id === task._id ? res.data : item)));
       cancelEditing();
@@ -136,7 +146,7 @@ function App() {
 
   const deleteTask = async (id) => {
     try {
-      await axios.delete(`${API_URL}/delete/${id}`);
+      await axios.delete(`${API_URL}/delete/${id}`, getAuthConfig());
       setTasks(tasks.filter((task) => task._id !== id));
     } catch (err) {
       setMessage("Could not delete task.");

@@ -9,6 +9,8 @@ A beginner-friendly MERN stack app using React, Axios, Node.js, Express, MongoDB
 - Login and receive a JWT token
 - Store token in localStorage
 - Access a protected `/profile` dashboard route
+- Access protected task CRUD routes with a valid token
+- Keep each user's tasks private
 - Logout and clear token
 - Add, view, edit, complete, and delete tasks
 - Responsive modern UI
@@ -89,20 +91,24 @@ Header: Authorization: Bearer <token>
 
 ```text
 POST /add
+Header: Authorization: Bearer <token>
 Body: { "text": "Learn MERN" }
 ```
 
 ```text
 GET /tasks
+Header: Authorization: Bearer <token>
 ```
 
 ```text
 PUT /update/:id
+Header: Authorization: Bearer <token>
 Body: { "text": "Updated task", "completed": true }
 ```
 
 ```text
 DELETE /delete/:id
+Header: Authorization: Bearer <token>
 ```
 
 ## MongoDB Atlas Notes

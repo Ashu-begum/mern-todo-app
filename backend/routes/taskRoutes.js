@@ -1,8 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const Task = require("../models/Task");
+const protect = require("../middleware/authMiddleware");
 
-router.post("/add", async (req, res) => {
+router.post("/add", protect, async (req, res) => {
   try {
     const { text } = req.body;
 
@@ -10,8 +11,8 @@ router.post("/add", async (req, res) => {
       return res.status(400).json({ message: "Task text is required" });
     }
 
-    // Create a new MongoDB document from the text sent by React.
-    const newTask = new Task({ text: text.trim() });
+    // Create a task for the logged-in user only.
+    const newTask = new Task({ text: text.trim(), user: req.user._id });
     const savedTask = await newTask.save();
 
     res.status(201).json(savedTask);
@@ -20,16 +21,16 @@ router.post("/add", async (req, res) => {
   }
 });
 
-router.get("/tasks", async (req, res) => {
+router.get("/tasks", protect, async (req, res) => {
   try {
-    const tasks = await Task.find().sort({ createdAt: -1 });
+    const tasks = await Task.find({ user: req.user._id }).sort({ createdAt: -1 });
     res.json(tasks);
   } catch (error) {
     res.status(500).json({ message: "Unable to fetch tasks", error: error.message });
   }
 });
 
-router.put("/update/:id", async (req, res) => {
+router.put("/update/:id", protect, async (req, res) => {
   try {
     const updateData = {};
 
@@ -45,8 +46,8 @@ router.put("/update/:id", async (req, res) => {
       updateData.completed = req.body.completed;
     }
 
-    const updatedTask = await Task.findByIdAndUpdate(
-      req.params.id,
+    const updatedTask = await Task.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id },
       updateData,
       { new: true, runValidators: true }
     );
@@ -61,9 +62,12 @@ router.put("/update/:id", async (req, res) => {
   }
 });
 
-router.delete("/delete/:id", async (req, res) => {
+router.delete("/delete/:id", protect, async (req, res) => {
   try {
-    const deletedTask = await Task.findByIdAndDelete(req.params.id);
+    const deletedTask = await Task.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user._id
+    });
 
     if (!deletedTask) {
       return res.status(404).json({ message: "Task not found" });
@@ -75,10 +79,10 @@ router.delete("/delete/:id", async (req, res) => {
   }
 });
 
-router.patch("/tasks/:id", async (req, res) => {
+router.patch("/tasks/:id", protect, async (req, res) => {
   try {
-    const updatedTask = await Task.findByIdAndUpdate(
-      req.params.id,
+    const updatedTask = await Task.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id },
       { completed: req.body.completed },
       { new: true, runValidators: true }
     );
@@ -93,9 +97,12 @@ router.patch("/tasks/:id", async (req, res) => {
   }
 });
 
-router.delete("/tasks/:id", async (req, res) => {
+router.delete("/tasks/:id", protect, async (req, res) => {
   try {
-    const deletedTask = await Task.findByIdAndDelete(req.params.id);
+    const deletedTask = await Task.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user._id
+    });
 
     if (!deletedTask) {
       return res.status(404).json({ message: "Task not found" });
