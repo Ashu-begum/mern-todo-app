@@ -6,7 +6,7 @@ const API_URL = "http://localhost:5000";
 
 function App() {
   const [authMode, setAuthMode] = useState("login");
-  const [authForm, setAuthForm] = useState({ name: "", email: "", password: "" });
+  const [authForm, setAuthForm] = useState({ name: "", email: "", password: "", code: "" });
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [user, setUser] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -40,6 +40,46 @@ function App() {
     e.preventDefault();
     setMessage("");
 
+    if (authMode === "forgot") {
+      try {
+        setLoading(true);
+        const res = await axios.post(`${API_URL}/forgot-password`, {
+          email: authForm.email,
+        });
+
+        setMessage(res.data.message);
+        setAuthMode("reset");
+        setAuthForm({ name: "", email: authForm.email, password: "", code: "" });
+      } catch (err) {
+        setMessage(err.response?.data?.message || "Could not create reset code");
+      } finally {
+        setLoading(false);
+      }
+
+      return;
+    }
+
+    if (authMode === "reset") {
+      try {
+        setLoading(true);
+        const res = await axios.post(`${API_URL}/reset-password`, {
+          email: authForm.email,
+          code: authForm.code,
+          password: authForm.password,
+        });
+
+        setMessage(res.data.message);
+        setAuthMode("login");
+        setAuthForm({ name: "", email: authForm.email, password: "", code: "" });
+      } catch (err) {
+        setMessage(err.response?.data?.message || "Could not reset password");
+      } finally {
+        setLoading(false);
+      }
+
+      return;
+    }
+
     const endpoint = authMode === "register" ? "/register" : "/login";
     const payload =
       authMode === "register"
@@ -53,7 +93,7 @@ function App() {
       localStorage.setItem("token", res.data.token);
       setToken(res.data.token);
       setUser(res.data.user);
-      setAuthForm({ name: "", email: "", password: "" });
+      setAuthForm({ name: "", email: "", password: "", code: "" });
     } catch (err) {
       setMessage(err.response?.data?.message || "Authentication failed");
     } finally {
@@ -166,10 +206,22 @@ function App() {
       <main className="page">
         <section className="auth-card">
           <p className="date-label">MERN Authentication</p>
-          <h1>{authMode === "register" ? "Create account" : "Welcome back"}</h1>
+          <h1>
+            {authMode === "register"
+              ? "Create account"
+              : authMode === "forgot"
+              ? "Forgot password"
+              : authMode === "reset"
+              ? "Enter reset code"
+              : "Welcome back"}
+          </h1>
           <p className="helper-text">
             {authMode === "register"
               ? "Register to get a JWT token and access the dashboard."
+              : authMode === "forgot"
+              ? "Enter your email to generate a reset code."
+              : authMode === "reset"
+              ? "Use the code from your email and choose a new password."
               : "Login to access your protected dashboard."}
           </p>
 
@@ -189,19 +241,41 @@ function App() {
               onChange={handleAuthChange}
               placeholder="Email"
             />
-            <input
-              name="password"
-              type="password"
-              value={authForm.password}
-              onChange={handleAuthChange}
-              placeholder="Password"
-            />
+            {authMode === "reset" && (
+              <input
+                name="code"
+                value={authForm.code}
+                onChange={handleAuthChange}
+                placeholder="Reset code"
+              />
+            )}
+            {authMode !== "forgot" && (
+              <input
+                name="password"
+                type="password"
+                value={authForm.password}
+                onChange={handleAuthChange}
+                placeholder={authMode === "reset" ? "New password" : "Password"}
+              />
+            )}
             <button type="submit" disabled={loading}>
-              {loading ? "Please wait" : authMode === "register" ? "Register" : "Login"}
+              {loading
+                ? "Please wait"
+                : authMode === "register"
+                ? "Register"
+                : authMode === "forgot"
+                ? "Send Reset Code"
+                : authMode === "reset"
+                ? "Reset Password"
+                : "Login"}
             </button>
           </form>
 
-          {message && <p className="message error">{message}</p>}
+          {message && (
+            <p className={message.includes("successfully") ? "message success" : "message error"}>
+              {message}
+            </p>
+          )}
 
           <button
             className="link-button"
@@ -212,8 +286,23 @@ function App() {
           >
             {authMode === "register"
               ? "Already have an account? Login"
+              : authMode === "forgot" || authMode === "reset"
+              ? "Back to login"
               : "New user? Create an account"}
           </button>
+
+          {authMode === "login" && (
+            <button
+              className="link-button small-link"
+              onClick={() => {
+                setMessage("");
+                setAuthMode("forgot");
+              }}
+            >
+              Forgot password?
+            </button>
+          )}
+
         </section>
       </main>
     );

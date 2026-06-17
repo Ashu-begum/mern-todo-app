@@ -108,6 +108,11 @@ button:disabled {
   background: #eee7da;
 }
 
+.small-link {
+  margin-top: 4px;
+  font-size: 14px;
+}
+
 .logout-button,
 .secondary-button {
   background: #6f6a61;
@@ -224,6 +229,12 @@ button:disabled {
   color: #9f1d1d;
   background: #fff5f5;
   border-color: #f0a5a5;
+}
+
+.success {
+  color: #245d35;
+  background: #e8f5eb;
+  border-color: #9dd6ad;
 }
 
 @media (max-width: 620px) {

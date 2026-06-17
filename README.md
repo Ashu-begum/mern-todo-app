@@ -7,6 +7,7 @@ A beginner-friendly MERN stack app using React, Axios, Node.js, Express, MongoDB
 - Register a new user account
 - Hash passwords with bcryptjs
 - Login and receive a JWT token
+- Reset forgotten password using an email-based reset code flow
 - Store token in localStorage
 - Access a protected `/profile` dashboard route
 - Access protected task CRUD routes with a valid token
@@ -57,6 +58,12 @@ Create `backend/.env`:
 MONGO_URI=mongodb+srv://<username>:<password>@<cluster-url>/mern-todo-app?retryWrites=true&w=majority
 PORT=5000
 JWT_SECRET=replace_this_with_a_long_random_secret_key
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=465
+EMAIL_SECURE=true
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_gmail_app_password
+EMAIL_FROM=your_email@gmail.com
 ```
 
 ## Frontend Setup
@@ -80,6 +87,18 @@ Body: { "name": "Ashu", "email": "ashu@example.com", "password": "password123" }
 ```text
 POST /login
 Body: { "email": "ashu@example.com", "password": "password123" }
+```
+
+```text
+POST /forgot-password
+Body: { "email": "ashu@example.com" }
+```
+
+The reset code is sent to the user's email. For Gmail, use a Gmail App Password, not your normal Gmail password.
+
+```text
+POST /reset-password
+Body: { "email": "ashu@example.com", "code": "123456", "password": "newpassword123" }
 ```
 
 ```text
