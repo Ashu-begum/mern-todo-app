@@ -1,20 +1,45 @@
-# MERN To-Do List App With JWT Authentication
+```md
+# MERN To-Do App with JWT Authentication
 
-A beginner-friendly MERN stack app using React, Axios, Node.js, Express, MongoDB Atlas, Mongoose, bcryptjs, and JSON Web Tokens.
+A full-stack MERN application that combines a protected To-Do task manager with user authentication. Users can register, log in, access a protected dashboard, manage their own tasks, reset forgotten passwords through an email reset code, and log out securely.
 
 ## Features
 
-- Register a new user account
-- Hash passwords with bcryptjs
-- Login and receive a JWT token
-- Reset forgotten password using an email-based reset code flow
-- Store token in localStorage
-- Access a protected `/profile` dashboard route
-- Access protected task CRUD routes with a valid token
-- Keep each user's tasks private
-- Logout and clear token
-- Add, view, edit, complete, and delete tasks
-- Responsive modern UI
+### Authentication
+- User registration with name, email, and password
+- Password hashing using bcryptjs
+- User login with JWT token generation
+- JWT stored in browser localStorage
+- Protected profile/dashboard route
+- Logout functionality
+- Forgot password flow using email reset code
+- Reset code expires after 10 minutes
+
+### Task Management
+- Add tasks
+- View logged-in user’s tasks
+- Edit task text
+- Mark tasks as completed/pending
+- Delete tasks
+- Tasks are protected and linked to the logged-in user
+
+## Tech Stack
+
+### Frontend
+- React.js
+- Axios
+- CSS
+
+### Backend
+- Node.js
+- Express.js
+- MongoDB Atlas
+- Mongoose
+- bcryptjs
+- JSON Web Token
+- Nodemailer
+- dotenv
+- CORS
 
 ## Folder Structure
 
@@ -29,7 +54,8 @@ mern-todo-app/
 |   |-- routes/
 |   |   |-- authRoutes.js
 |   |   `-- taskRoutes.js
-|   |-- .env
+|   |-- utils/
+|   |   `-- sendEmail.js
 |   |-- .env.example
 |   |-- package.json
 |   `-- server.js
@@ -37,12 +63,30 @@ mern-todo-app/
 |   |-- public/
 |   |   `-- index.html
 |   |-- src/
-|   |   |-- components/
 |   |   |-- App.css
 |   |   |-- App.js
 |   |   `-- index.js
+|   |-- package.json
 `-- README.md
 ```
+
+## Environment Variables
+
+Create a `.env` file inside the `backend` folder.
+
+```env
+MONGO_URI=your_mongodb_atlas_connection_string
+PORT=5000
+JWT_SECRET=your_long_jwt_secret_key
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=465
+EMAIL_SECURE=true
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_gmail_app_password
+EMAIL_FROM=your_email@gmail.com
+```
+
+Note: `EMAIL_PASS` must be a Gmail App Password, not your normal Gmail password.
 
 ## Backend Setup
 
@@ -52,21 +96,15 @@ npm install
 npm start
 ```
 
-Create `backend/.env`:
+The backend runs on:
 
-```env
-MONGO_URI=mongodb+srv://<username>:<password>@<cluster-url>/mern-todo-app?retryWrites=true&w=majority
-PORT=5000
-JWT_SECRET=replace_this_with_a_long_random_secret_key
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=465
-EMAIL_SECURE=true
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_gmail_app_password
-EMAIL_FROM=your_email@gmail.com
+```text
+http://localhost:5000
 ```
 
 ## Frontend Setup
+
+Open a second terminal:
 
 ```bash
 cd frontend
@@ -74,62 +112,227 @@ npm install
 npm start
 ```
 
-Frontend runs at `http://localhost:3000`.
-Backend runs at `http://localhost:5000`.
+The frontend runs on:
 
-## Authentication API
+```text
+http://localhost:3000
+```
+
+## API Routes
+
+### Authentication Routes
+
+Register a new user:
 
 ```text
 POST /register
-Body: { "name": "Ashu", "email": "ashu@example.com", "password": "password123" }
 ```
+
+Request body:
+
+```json
+{
+  "name": "Ashu Begum",
+  "email": "ashu@example.com",
+  "password": "password123"
+}
+```
+
+Login user:
 
 ```text
 POST /login
-Body: { "email": "ashu@example.com", "password": "password123" }
 ```
 
-```text
-POST /forgot-password
-Body: { "email": "ashu@example.com" }
+Request body:
+
+```json
+{
+  "email": "ashu@example.com",
+  "password": "password123"
+}
 ```
 
-The reset code is sent to the user's email. For Gmail, use a Gmail App Password, not your normal Gmail password.
-
-```text
-POST /reset-password
-Body: { "email": "ashu@example.com", "code": "123456", "password": "newpassword123" }
-```
+Get protected profile:
 
 ```text
 GET /profile
-Header: Authorization: Bearer <token>
 ```
 
-## Task API
+Headers:
+
+```text
+Authorization: Bearer <token>
+```
+
+Request password reset code:
+
+```text
+POST /forgot-password
+```
+
+Request body:
+
+```json
+{
+  "email": "ashu@example.com"
+}
+```
+
+Reset password:
+
+```text
+POST /reset-password
+```
+
+Request body:
+
+```json
+{
+  "email": "ashu@example.com",
+  "code": "123456",
+  "password": "newpassword123"
+}
+```
+
+### Task Routes
+
+Add task:
 
 ```text
 POST /add
-Header: Authorization: Bearer <token>
-Body: { "text": "Learn MERN" }
 ```
+
+Headers:
+
+```text
+Authorization: Bearer <token>
+```
+
+Request body:
+
+```json
+{
+  "text": "Complete task"
+}
+```
+
+Fetch user tasks:
 
 ```text
 GET /tasks
-Header: Authorization: Bearer <token>
 ```
+
+Headers:
+
+```text
+Authorization: Bearer <token>
+```
+
+Update task:
 
 ```text
 PUT /update/:id
-Header: Authorization: Bearer <token>
-Body: { "text": "Updated task", "completed": true }
 ```
+
+Headers:
+
+```text
+Authorization: Bearer <token>
+```
+
+Request body:
+
+```json
+{
+  "text": "Updated task text",
+  "completed": true
+}
+```
+
+Delete task:
 
 ```text
 DELETE /delete/:id
-Header: Authorization: Bearer <token>
 ```
 
-## MongoDB Atlas Notes
+Headers:
 
-If the backend cannot connect to MongoDB Atlas, open Atlas and go to **Security -> Network Access**, then add your current IP address.
+```text
+Authorization: Bearer <token>
+```
+
+## MongoDB Atlas Setup
+
+1. Create a MongoDB Atlas account.
+2. Create a cluster.
+3. Create a database user.
+4. Add your current IP address in Network Access.
+5. Copy the MongoDB connection string.
+6. Paste it in `backend/.env` as `MONGO_URI`.
+
+If the backend cannot connect to MongoDB, check:
+- MongoDB URI is correct
+- Database username and password are correct
+- Current IP address is added in Atlas Network Access
+
+## Gmail App Password Setup
+
+To send password reset emails:
+
+1. Open your Google Account.
+2. Go to Security.
+3. Enable 2-Step Verification.
+4. Create an App Password for Mail.
+5. Copy the 16-character app password.
+6. Paste it into `EMAIL_PASS` in `backend/.env`.
+
+Use the app password without spaces.
+
+## How It Works
+
+1. User registers with name, email, and password.
+2. Backend hashes the password and stores the user in MongoDB.
+3. User logs in with email and password.
+4. Backend verifies credentials and returns a JWT token.
+5. Frontend stores the token in localStorage.
+6. Protected routes use the token in the Authorization header.
+7. User can access their dashboard and manage only their own tasks.
+8. User can reset password using an email reset code.
+
+## Run Commands
+
+Backend:
+
+```bash
+cd backend
+npm start
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm start
+```
+
+## Build Frontend
+
+```bash
+cd frontend
+npm run build
+```
+
+## Security Notes
+
+- Passwords are hashed before storing in MongoDB.
+- JWT is required for protected routes.
+- Each task is linked to the logged-in user.
+- Users cannot access another user’s tasks.
+- Password reset codes are hashed and expire after 10 minutes.
+- Sensitive values are stored in `.env` and should not be pushed to GitHub.
+
+## Author
+
+Ashu Begum
+```
